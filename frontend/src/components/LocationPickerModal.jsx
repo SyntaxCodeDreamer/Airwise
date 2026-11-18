@@ -9,7 +9,11 @@ const LocationPickerModal = ({ isOpen, onClose, onSelectLocation, currentLat = 2
   const [gpsLoading, setGpsLoading] = useState(false);
   const [results, setResults] = useState([]);
   
-  const [selectedPin, setSelectedPin] = useState({ lat: currentLat, lon: currentLon, name: 'Custom Pin Point' });
+  // Map tab state: address search instead of raw coordinates
+  const [mapAddressQuery, setMapAddressQuery] = useState('');
+  const [mapSearchLoading, setMapSearchLoading] = useState(false);
+  const [mapSearchResults, setMapSearchResults] = useState([]);
+  const [selectedPin, setSelectedPin] = useState({ lat: currentLat, lon: currentLon, name: 'Anand Vihar, New Delhi' });
 
   if (!isOpen) return null;
 
@@ -72,6 +76,27 @@ const LocationPickerModal = ({ isOpen, onClose, onSelectLocation, currentLat = 2
     }
   };
 
+  const handleMapAddressSearch = async (e) => {
+    e?.preventDefault();
+    if (!mapAddressQuery.trim()) return;
+    setMapSearchLoading(true);
+    try {
+      const data = await aqiApi.geocode(mapAddressQuery);
+      setMapSearchResults(data || []);
+      if (data && data.length > 0) {
+        setSelectedPin({
+          lat: data[0].lat,
+          lon: data[0].lon,
+          name: data[0].name
+        });
+      }
+    } catch (err) {
+      console.error("Map geocoding failed:", err);
+    } finally {
+      setMapSearchLoading(false);
+    }
+  };
+
   const popularZones = [
     { name: 'Anand Vihar, New Delhi', lat: 28.6508, lon: 77.3152 },
     { name: 'Bandra Kurla, Mumbai', lat: 19.0657, lon: 72.8687 },
@@ -81,17 +106,17 @@ const LocationPickerModal = ({ isOpen, onClose, onSelectLocation, currentLat = 2
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in">
-      <div className="relative w-full max-w-2xl bg-slate-900 border border-slate-800 rounded-3xl p-6 md:p-8 shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-950/90 backdrop-blur-md animate-fade-in">
+      <div className="relative w-full max-w-4xl bg-slate-900 border border-slate-800 rounded-3xl p-5 md:p-7 shadow-2xl overflow-hidden flex flex-col max-h-[95vh] h-full sm:h-auto">
         {/* Modal Header */}
-        <div className="flex items-center justify-between pb-4 border-b border-slate-800">
+        <div className="flex items-center justify-between pb-3 border-b border-slate-800">
           <div>
             <h2 className="text-xl font-extrabold text-white flex items-center gap-2">
               <MapPin className="w-5 h-5 text-emerald-400" />
               Choose Air Quality Location
             </h2>
             <p className="text-xs text-slate-400 mt-0.5">
-              Type any neighborhood, city, or tap to choose directly via interactive map.
+              Type any neighborhood, address, or select on interactive map.
             </p>
           </div>
           <button
@@ -102,8 +127,8 @@ const LocationPickerModal = ({ isOpen, onClose, onSelectLocation, currentLat = 2
           </button>
         </div>
 
-        {/* Tab Selection: Type vs Google/OSM Map */}
-        <div className="flex items-center gap-2 my-4 bg-slate-950 p-1.5 rounded-2xl border border-slate-800">
+        {/* Tab Selection: Type vs Map */}
+        <div className="flex items-center gap-2 my-3 bg-slate-950 p-1.5 rounded-2xl border border-slate-800">
           <button
             onClick={() => setActiveTab('type')}
             className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-2 ${
@@ -216,8 +241,58 @@ const LocationPickerModal = ({ isOpen, onClose, onSelectLocation, currentLat = 2
             </div>
           ) : (
             <div className="space-y-3">
+              {/* Address Search Form for Map */}
+              <form onSubmit={handleMapAddressSearch} className="flex gap-2">
+                <div className="relative flex-1">
+                  <Search className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <input
+                    type="text"
+                    placeholder="Enter address or landmark (e.g. Connaught Place, MG Road, Sector 18)..."
+                    value={mapAddressQuery}
+                    onChange={(e) => setMapAddressQuery(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={mapSearchLoading}
+                  className="px-5 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-xl text-xs transition-colors shadow-lg shadow-emerald-500/20 disabled:opacity-50 flex items-center gap-1.5"
+                >
+                  {mapSearchLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Search className="w-3.5 h-3.5" />}
+                  Search Address
+                </button>
+              </form>
+
+              {/* Address Search Matches */}
+              {mapSearchResults.length > 0 && (
+                <div className="max-h-36 overflow-y-auto space-y-1.5 bg-slate-950/80 p-2 rounded-xl border border-slate-800">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-1">Address Suggestions</span>
+                  {mapSearchResults.map((item, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => {
+                        setSelectedPin({
+                          lat: item.lat,
+                          lon: item.lon,
+                          name: item.name
+                        });
+                        setMapSearchResults([]);
+                      }}
+                      className="w-full text-left p-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800/80 text-xs flex items-center justify-between transition-colors"
+                    >
+                      <div className="truncate pr-2">
+                        <span className="text-slate-200 font-medium block truncate">{item.name}</span>
+                        <span className="text-[10px] text-slate-400">{item.lat?.toFixed(4)}°N, {item.lon?.toFixed(4)}°E</span>
+                      </div>
+                      <span className="text-[11px] font-bold text-emerald-400 shrink-0">Pin on Map</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+
               {/* Interactive OpenStreetMap embed frame */}
-              <div className="relative rounded-2xl overflow-hidden border border-slate-800 h-64 bg-slate-950">
+              <div className="relative rounded-2xl overflow-hidden border border-slate-800 h-72 sm:h-80 bg-slate-950">
                 <iframe
                   title="Location Map"
                   width="100%"
@@ -226,53 +301,36 @@ const LocationPickerModal = ({ isOpen, onClose, onSelectLocation, currentLat = 2
                   scrolling="no"
                   marginHeight="0"
                   marginWidth="0"
-                  src={`https://www.openstreetmap.org/export/embed.html?bbox=${selectedPin.lon - 0.08}%2C${selectedPin.lat - 0.08}%2C${selectedPin.lon + 0.08}%2C${selectedPin.lat + 0.08}&amp;layer=mapnik&amp;marker=${selectedPin.lat}%2C${selectedPin.lon}`}
+                  src={`https://www.openstreetmap.org/export/embed.html?bbox=${selectedPin.lon - 0.06}%2C${selectedPin.lat - 0.06}%2C${selectedPin.lon + 0.06}%2C${selectedPin.lat + 0.06}&amp;layer=mapnik&amp;marker=${selectedPin.lat}%2C${selectedPin.lon}`}
                   className="w-full h-full filter saturate-150 contrast-125"
                 />
-                <div className="absolute top-2 left-2 bg-slate-900/90 backdrop-blur px-3 py-1.5 rounded-lg border border-slate-700 text-[11px] text-slate-200 font-mono">
-                  📍 {selectedPin.lat.toFixed(4)}°N, {selectedPin.lon.toFixed(4)}°E
+                <div className="absolute top-2 left-2 bg-slate-900/90 backdrop-blur px-3 py-1.5 rounded-lg border border-slate-700 text-xs text-slate-200 flex items-center gap-2 max-w-[85%] truncate">
+                  <MapPin className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                  <span className="font-medium truncate">{selectedPin.name}</span>
                 </div>
               </div>
 
-              {/* Coordinate Adjuster */}
-              <div className="grid grid-cols-2 gap-3 bg-slate-950/60 p-3 rounded-2xl border border-slate-800">
+              {/* Selected Target Address Box */}
+              <div className="bg-slate-950/60 p-3 rounded-2xl border border-slate-800 flex items-center justify-between">
                 <div>
-                  <label className="text-[10px] font-bold uppercase text-slate-400 block mb-1">Latitude</label>
-                  <input
-                    type="number"
-                    step="0.001"
-                    value={selectedPin.lat}
-                    onChange={(e) => setSelectedPin({ ...selectedPin, lat: parseFloat(e.target.value) || 0 })}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white"
-                  />
-                </div>
-                <div>
-                  <label className="text-[10px] font-bold uppercase text-slate-400 block mb-1">Longitude</label>
-                  <input
-                    type="number"
-                    step="0.001"
-                    value={selectedPin.lon}
-                    onChange={(e) => setSelectedPin({ ...selectedPin, lon: parseFloat(e.target.value) || 0 })}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white"
-                  />
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Selected Address Location</span>
+                  <div className="text-sm font-semibold text-white mt-0.5">{selectedPin.name}</div>
+                  <div className="text-[11px] text-emerald-400 font-mono mt-0.5">
+                    {selectedPin.lat?.toFixed(4)}°N, {selectedPin.lon?.toFixed(4)}°E
+                  </div>
                 </div>
               </div>
 
               <div className="flex gap-2">
                 <button
                   type="button"
-                  onClick={async () => {
-                    let pinName = `Custom Pin (${selectedPin.lat.toFixed(2)}°N, ${selectedPin.lon.toFixed(2)}°E)`;
-                    try {
-                      const rev = await aqiApi.reverseGeocode(selectedPin.lat, selectedPin.lon);
-                      if (rev && rev.name) pinName = rev.name;
-                    } catch (e) {}
-                    handleSelect({ ...selectedPin, name: pinName });
+                  onClick={() => {
+                    handleSelect(selectedPin);
                   }}
-                  className="flex-1 py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-xl text-xs transition-colors shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2"
+                  className="w-full py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-xl text-xs transition-colors shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2"
                 >
                   <Check className="w-4 h-4" />
-                  Confirm Map Location Coordinates
+                  Confirm This Location
                 </button>
               </div>
             </div>
