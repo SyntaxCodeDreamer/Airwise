@@ -18,6 +18,10 @@ export const aqiApi = {
   geocode: async (query) => {
     const res = await axios.get(`${API_BASE}/aqi/geocode`, { params: { q: query } });
     return res.data;
+  },
+  reverseGeocode: async (lat, lon) => {
+    const res = await axios.get(`${API_BASE}/aqi/reverse-geocode`, { params: { lat, lon } });
+    return res.data;
   }
 };
 

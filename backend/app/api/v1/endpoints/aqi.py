@@ -40,3 +40,13 @@ async def geocode_location(q: str = Query(..., min_length=2, max_length=150, des
     clean_q = q.strip()
     results = await ExternalAQIService.geocode_address(clean_q)
     return results
+
+@router.get("/reverse-geocode")
+async def reverse_geocode_location(
+    lat: float = Query(..., ge=-90.0, le=90.0, description="Latitude"),
+    lon: float = Query(..., ge=-180.0, le=180.0, description="Longitude")
+):
+    """
+    Reverse geocodes GPS coordinates into human-readable city, state, or locality name.
+    """
+    return await ExternalAQIService.reverse_geocode(lat, lon)

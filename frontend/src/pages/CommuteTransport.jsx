@@ -3,7 +3,7 @@ import { aiApi } from '../services/api';
 import { Navigation, Leaf, ShieldAlert, Award, ArrowRight, Gauge } from 'lucide-react';
 
 const CommuteTransport = () => {
-  const [distance, setDistance] = useState(14);
+  const [distance, setDistance] = useState(15);
   const [loading, setLoading] = useState(false);
   const [comparison, setComparison] = useState(null);
 
@@ -54,25 +54,26 @@ const CommuteTransport = () => {
           </button>
         </div>
 
+        {/* Range Slider matching marks: 0 km to 50 km */}
         <input
           type="range"
-          min="2"
+          min="0"
           max="50"
           step="1"
           value={distance}
           onChange={(e) => setDistance(Number(e.target.value))}
           className="w-full h-2.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-400"
         />
-        <div className="flex justify-between text-xs text-slate-500 mt-2 font-mono">
-          <span>2 km</span>
-          <span>15 km</span>
-          <span>30 km</span>
-          <span>50 km</span>
+        <div className="relative w-full text-xs text-slate-400 mt-2 font-mono">
+          <span className="absolute left-[0%] -translate-x-1/2">0 km</span>
+          <span className="absolute left-[30%] -translate-x-1/2">15 km</span>
+          <span className="absolute left-[60%] -translate-x-1/2">30 km</span>
+          <span className="absolute left-[100%] -translate-x-1/2">50 km</span>
         </div>
       </div>
 
       {/* Commute Modes Comparison Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-6">
         {comparison?.modes?.map((m, idx) => {
           const isTop = m.mode.includes("Metro");
           return (
@@ -135,11 +136,11 @@ const CommuteTransport = () => {
             AirWise Green Mobility Commitment
           </h2>
           <p className="text-sm text-slate-300 mt-1 max-w-2xl">
-            Switching a single 14km round-trip car commute to the Delhi Metro cuts your direct PM2.5 inhalation by up to 65% and saves over 4.2 kg of greenhouse gas every day.
+            Switching daily commutes to rapid rail transit cuts direct PM2.5 inhalation by up to 65% and saves valuable kilograms of carbon emissions each trip.
           </p>
         </div>
         <div className="shrink-0 bg-emerald-500 text-slate-950 font-bold px-6 py-3 rounded-2xl text-center shadow-lg shadow-emerald-500/20">
-          <div className="text-2xl font-black">~126 kg</div>
+          <div className="text-2xl font-black">~{(distance * 0.148 * 22).toFixed(1)} kg</div>
           <div className="text-[11px] uppercase tracking-wider font-semibold">CO2 Saved Monthly</div>
         </div>
       </div>
@@ -148,4 +149,3 @@ const CommuteTransport = () => {
 };
 
 export default CommuteTransport;
-

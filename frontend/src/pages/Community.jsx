@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { communityApi } from '../services/api';
-import { Users, AlertTriangle, ThumbsUp, Send, CheckCircle2, MapPin } from 'lucide-react';
+import { Users, AlertTriangle, ThumbsUp, Send, CheckCircle2, MapPin, Image as ImageIcon, X } from 'lucide-react';
 
 const Community = () => {
   const [reports, setReports] = useState([]);
   const [incidentType, setIncidentType] = useState("GARBAGE_BURNING");
   const [description, setDescription] = useState("");
   const [landmark, setLandmark] = useState("");
+  const [imagePreview, setImagePreview] = useState(null);
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
@@ -23,6 +24,21 @@ const Community = () => {
     loadReports();
   }, []);
 
+  const handleImageChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeImage = () => {
+    setImagePreview(null);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!description) return;
@@ -37,6 +53,7 @@ const Community = () => {
       });
       setDescription("");
       setLandmark("");
+      setImagePreview(null);
       setSubmitted(true);
       setTimeout(() => setSubmitted(false), 4000);
       loadReports();
@@ -73,7 +90,7 @@ const Community = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        {/* Incident Submission Form */}
+        {/* Incident Submission Form with Image Upload */}
         <div className="lg:col-span-5">
           <div className="bg-slate-800/60 border border-slate-700/60 rounded-3xl p-6 md:p-8 shadow-xl sticky top-24">
             <h2 className="text-lg font-bold text-white mb-2 flex items-center gap-2">
@@ -133,6 +150,44 @@ const Community = () => {
                   onChange={(e) => setDescription(e.target.value)}
                   className="w-full bg-slate-900 border border-slate-700 text-white text-xs md:text-sm rounded-xl p-3 focus:outline-none focus:border-emerald-500"
                 />
+              </div>
+
+              {/* Upload Image Feature */}
+              <div>
+                <label className="text-xs font-bold text-slate-300 uppercase tracking-wider block mb-1.5">
+                  Upload Photo Evidence (Optional)
+                </label>
+                
+                {imagePreview ? (
+                  <div className="relative rounded-2xl overflow-hidden border border-slate-700 max-h-48 group">
+                    <img 
+                      src={imagePreview} 
+                      alt="Incident Evidence" 
+                      className="w-full h-40 object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={removeImage}
+                      className="absolute top-2 right-2 bg-slate-950/80 hover:bg-rose-500 text-white p-1.5 rounded-full transition-colors"
+                      title="Remove image"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <label className="flex flex-col items-center justify-center p-4 bg-slate-900/60 hover:bg-slate-900 border-2 border-dashed border-slate-700 hover:border-emerald-500/50 rounded-2xl cursor-pointer transition-colors group">
+                    <ImageIcon className="w-6 h-6 text-slate-500 group-hover:text-emerald-400 mb-1 transition-colors" />
+                    <span className="text-xs text-slate-400 group-hover:text-slate-200">
+                      Click to upload photo evidence (JPG, PNG)
+                    </span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageChange}
+                      className="hidden"
+                    />
+                  </label>
+                )}
               </div>
 
               <button
@@ -207,4 +262,3 @@ const Community = () => {
 };
 
 export default Community;
-

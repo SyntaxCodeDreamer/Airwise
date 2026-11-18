@@ -22,10 +22,6 @@ INDIAN_CITIES = {
 class ExternalAQIService:
     @staticmethod
     async def fetch_open_meteo_aqi(lat: float, lon: float) -> Dict[str, Any]:
-        """
-        Fetches live pollutant levels and 48-hour forecasts from Open-Meteo Air Quality API.
-        Uses in-memory TTL caching with coordinate quantization (~1.1km) for maximum efficiency.
-        """
         cache_key = f"aqi_{round(lat, 2)}_{round(lon, 2)}"
         cached = aqi_cache.get(cache_key)
         if cached:
@@ -115,9 +111,6 @@ class ExternalAQIService:
 
     @staticmethod
     async def geocode_address(query: str) -> List[Dict[str, Any]]:
-        """
-        Geocodes location name / address with caching.
-        """
         cache_key = f"geo_{query.strip().lower()}"
         cached = aqi_cache.get(cache_key)
         if cached:
@@ -167,6 +160,48 @@ class ExternalAQIService:
             })
         aqi_cache.set(cache_key, matched, ttl=1800)
         return matched
+
+    @staticmethod
+    async def reverse_geocode(lat: float, lon: float) -> Dict[str, str]:
+        """
+        Reverse geocodes coordinates to a human-readable city/state name.
+        Uses OpenStreetMap Nominatim reverse geocoder with caching and nearest city fallback.
+        """
+        cache_key = f"rev_{round(lat, 3)}_{round(lon, 3)}"
+        cached = aqi_cache.get(cache_key)
+        if cached:
+            return cached
+
+        try:
+            url = "https://nominatim.openstreetmap.org/reverse"
+            headers = {"User-Agent": "AirWiseAI-EnvironmentalAssistant/1.0"}
+            params = {"lat": lat, "lon": lon, "format": "json"}
+            async with httpx.AsyncClient(timeout=5.0) as client:
+                res = await client.get(url, params=params, headers=headers)
+                if res.status_code == 200:
+                    data = res.json()
+                    addr = data.get("address", {})
+                    city = addr.get("city") or addr.get("town") or addr.get("suburb") or addr.get("county") or "Local Area"
+                    state = addr.get("state") or addr.get("country", "")
+                    label = f"{city}, {state}" if state else city
+                    result = {"name": label, "lat": lat, "lon": lon}
+                    aqi_cache.set(cache_key, result, ttl=86400)
+                    return result
+        except Exception as e:
+            logger.warning(f"Reverse geocode failed: {e}")
+
+        # Nearest Indian City fallback
+        nearest_city = "New Delhi"
+        min_dist = float("inf")
+        for k, v in INDIAN_CITIES.items():
+            dist = (v["lat"] - lat) ** 2 + (v["lon"] - lon) ** 2
+            if dist < min_dist:
+                min_dist = dist
+                nearest_city = v["name"]
+
+        fallback_res = {"name": nearest_city, "lat": lat, "lon": lon}
+        aqi_cache.set(cache_key, fallback_res, ttl=3600)
+        return fallback_res
 
     @staticmethod
     def get_known_cities() -> List[Dict[str, Any]]:

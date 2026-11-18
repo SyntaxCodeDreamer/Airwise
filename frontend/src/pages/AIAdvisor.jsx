@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { aiApi } from '../services/api';
 import { useAuth } from '../context/AuthContext';
-import { Brain, Clock, ShieldCheck, Home, AlertCircle, Languages, Sparkles } from 'lucide-react';
+import { Brain, Clock, ShieldCheck, Home, AlertCircle, Languages, Sparkles, ChevronDown } from 'lucide-react';
 
 const AIAdvisor = () => {
   const { user } = useAuth();
@@ -52,6 +52,15 @@ const AIAdvisor = () => {
     fetchAIInsights(lang);
   };
 
+  const languageOptions = [
+    { id: "en", label: "English" },
+    { id: "hi", label: "हिंदी (Hindi)" },
+    { id: "bn", label: "বাংলা (Bengali)" },
+    { id: "mr", label: "मराठी (Marathi)" },
+    { id: "ta", label: "தமிழ் (Tamil)" },
+    { id: "te", label: "తెలుగు (Telugu)" }
+  ];
+
   return (
     <div className="max-w-7xl mx-auto px-4 lg:px-8 py-8 space-y-8">
       {/* Header and Language Bar */}
@@ -69,27 +78,21 @@ const AIAdvisor = () => {
           </p>
         </div>
 
-        {/* Language Selector */}
-        <div className="flex items-center gap-2 bg-slate-800/80 p-1.5 rounded-2xl border border-slate-700">
-          <Languages className="w-4 h-4 text-slate-400 ml-2" />
-          {[
-            { id: "en", label: "English" },
-            { id: "hi", label: "हिंदी (Hindi)" },
-            { id: "bn", label: "বাংলা (Bengali)" },
-            { id: "mr", label: "मराठी (Marathi)" }
-          ].map(l => (
-            <button
-              key={l.id}
-              onClick={() => handleLanguageChange(l.id)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
-                language === l.id 
-                  ? 'bg-emerald-500 text-white shadow-md' 
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              {l.label}
-            </button>
-          ))}
+        {/* Clean Language Selector Dropdown Menu */}
+        <div className="relative inline-flex items-center bg-slate-800/90 border border-slate-700/80 rounded-2xl px-3 py-1.5 shadow-lg group">
+          <Languages className="w-4 h-4 text-emerald-400 mr-2 shrink-0" />
+          <select
+            value={language}
+            onChange={(e) => handleLanguageChange(e.target.value)}
+            className="bg-transparent text-white text-xs md:text-sm font-semibold pr-8 py-1.5 focus:outline-none cursor-pointer appearance-none"
+          >
+            {languageOptions.map(l => (
+              <option key={l.id} value={l.id} className="bg-slate-900 text-slate-100 py-1">
+                {l.label}
+              </option>
+            ))}
+          </select>
+          <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3 pointer-events-none group-hover:text-emerald-400 transition-colors" />
         </div>
       </div>
 

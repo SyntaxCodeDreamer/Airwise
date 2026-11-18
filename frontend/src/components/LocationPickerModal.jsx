@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
 import { aqiApi } from '../services/api';
-import { MapPin, Search, Map, Check, Crosshair, ExternalLink } from 'lucide-react';
+import { MapPin, Search, Map, Check, Crosshair, Loader2 } from 'lucide-react';
 
 const LocationPickerModal = ({ isOpen, onClose, onSelectLocation, currentLat = 28.6508, currentLon = 77.3152 }) => {
   const [activeTab, setActiveTab] = useState('type'); // 'type' | 'map'
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
+  const [gpsLoading, setGpsLoading] = useState(false);
   const [results, setResults] = useState([]);
   
-  // Interactive coordinates for map picker
   const [selectedPin, setSelectedPin] = useState({ lat: currentLat, lon: currentLon, name: 'Custom Pin Point' });
 
   if (!isOpen) return null;
@@ -38,25 +38,40 @@ const LocationPickerModal = ({ isOpen, onClose, onSelectLocation, currentLat = 2
 
   const handleUseCurrentGPS = () => {
     if (navigator.geolocation) {
+      setGpsLoading(true);
       navigator.geolocation.getCurrentPosition(
-        (pos) => {
+        async (pos) => {
           const lat = parseFloat(pos.coords.latitude.toFixed(4));
           const lon = parseFloat(pos.coords.longitude.toFixed(4));
-          onSelectLocation({
-            name: `Live GPS (${lat}°N, ${lon}°E)`,
-            lat,
-            lon
-          });
-          onClose();
+          let resolvedName = `Live GPS (${lat}°N, ${lon}°E)`;
+          
+          try {
+            // Reverse geocode to get actual city / neighborhood name
+            const revData = await aqiApi.reverseGeocode(lat, lon);
+            if (revData && revData.name) {
+              resolvedName = revData.name;
+            }
+          } catch (e) {
+            console.log("Reverse geocode fallback to coords:", e);
+          } finally {
+            setGpsLoading(false);
+            onSelectLocation({
+              name: resolvedName,
+              lat,
+              lon
+            });
+            onClose();
+          }
         },
         (err) => {
+          setGpsLoading(false);
           alert('GPS permission not granted or unavailable. Defaulting to Delhi coordinates.');
-        }
+        },
+        { enableHighAccuracy: true, timeout: 8000 }
       );
     }
   };
 
-  // Preset key hot zones
   const popularZones = [
     { name: 'Anand Vihar, New Delhi', lat: 28.6508, lon: 77.3152 },
     { name: 'Bandra Kurla, Mumbai', lat: 19.0657, lon: 72.8687 },
@@ -68,7 +83,7 @@ const LocationPickerModal = ({ isOpen, onClose, onSelectLocation, currentLat = 2
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in">
       <div className="relative w-full max-w-2xl bg-slate-900 border border-slate-800 rounded-3xl p-6 md:p-8 shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-        {/* Header */}
+        {/* Modal Header */}
         <div className="flex items-center justify-between pb-4 border-b border-slate-800">
           <div>
             <h2 className="text-xl font-extrabold text-white flex items-center gap-2">
@@ -138,14 +153,24 @@ const LocationPickerModal = ({ isOpen, onClose, onSelectLocation, currentLat = 2
                 </button>
               </form>
 
-              {/* Quick GPS Action */}
+              {/* Quick GPS Action with Reverse Geocoding */}
               <button
                 type="button"
                 onClick={handleUseCurrentGPS}
-                className="w-full py-2.5 px-4 bg-slate-800/60 hover:bg-slate-800 border border-slate-700/60 rounded-xl text-xs font-semibold text-emerald-400 flex items-center justify-center gap-2 transition-colors"
+                disabled={gpsLoading}
+                className="w-full py-2.5 px-4 bg-slate-800/60 hover:bg-slate-800 border border-slate-700/60 rounded-xl text-xs font-semibold text-emerald-400 flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
               >
-                <Crosshair className="w-4 h-4" />
-                Use My Current Device GPS Location
+                {gpsLoading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin text-emerald-400" />
+                    Detecting & Resolving Location Name...
+                  </>
+                ) : (
+                  <>
+                    <Crosshair className="w-4 h-4" />
+                    Use My Current Device GPS Location
+                  </>
+                )}
               </button>
 
               {/* Search Results */}
@@ -172,7 +197,7 @@ const LocationPickerModal = ({ isOpen, onClose, onSelectLocation, currentLat = 2
                 </div>
               )}
 
-              {/* Key Preset Hubs */}
+              {/* Popular Smog Hotspots */}
               <div className="space-y-2 pt-2">
                 <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Popular Smog Hotspots</span>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -191,7 +216,7 @@ const LocationPickerModal = ({ isOpen, onClose, onSelectLocation, currentLat = 2
             </div>
           ) : (
             <div className="space-y-3">
-              {/* Interactive OpenStreetMap / Google Maps embed frame */}
+              {/* Interactive OpenStreetMap embed frame */}
               <div className="relative rounded-2xl overflow-hidden border border-slate-800 h-64 bg-slate-950">
                 <iframe
                   title="Location Map"
@@ -209,7 +234,7 @@ const LocationPickerModal = ({ isOpen, onClose, onSelectLocation, currentLat = 2
                 </div>
               </div>
 
-              {/* Interactive Latitude / Longitude Adjuster */}
+              {/* Coordinate Adjuster */}
               <div className="grid grid-cols-2 gap-3 bg-slate-950/60 p-3 rounded-2xl border border-slate-800">
                 <div>
                   <label className="text-[10px] font-bold uppercase text-slate-400 block mb-1">Latitude</label>
@@ -236,7 +261,14 @@ const LocationPickerModal = ({ isOpen, onClose, onSelectLocation, currentLat = 2
               <div className="flex gap-2">
                 <button
                   type="button"
-                  onClick={() => handleSelect(selectedPin)}
+                  onClick={async () => {
+                    let pinName = `Custom Pin (${selectedPin.lat.toFixed(2)}°N, ${selectedPin.lon.toFixed(2)}°E)`;
+                    try {
+                      const rev = await aqiApi.reverseGeocode(selectedPin.lat, selectedPin.lon);
+                      if (rev && rev.name) pinName = rev.name;
+                    } catch (e) {}
+                    handleSelect({ ...selectedPin, name: pinName });
+                  }}
                   className="flex-1 py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-xl text-xs transition-colors shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2"
                 >
                   <Check className="w-4 h-4" />
