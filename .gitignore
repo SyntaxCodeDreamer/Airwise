@@ -1,0 +1,68 @@
+# Operating System Files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Python / FastAPI Backend
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+.pytest_cache/
+.coverage
+htmlcov/
+.env
+.env.local
+.env.*.local
+*.log
+
+# Node.js / React Web Frontend
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Vite Frontend Build Artifacts
+frontend/dist/
+frontend/dist-ssr/
+*.local
+
+# React Native / Expo Mobile
+mobile/.expo/
+mobile/web-build/
+mobile/.expo-shared/
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+
+# IDE and Editor Files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+
+.agents/
