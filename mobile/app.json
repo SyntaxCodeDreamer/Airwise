@@ -28,7 +28,8 @@
       "package": "K.e.v.a.l"
     },
     "plugins": [
-      "expo-router"
+      "expo-router",
+      "expo-asset"
     ],
     "extra": {
       "router": {
