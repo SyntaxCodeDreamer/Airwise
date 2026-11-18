@@ -24,11 +24,19 @@
         "ACCESS_COARSE_LOCATION",
         "ACCESS_FINE_LOCATION",
         "POST_NOTIFICATIONS"
-      ]
+      ],
+      "package": "K.e.v.a.l"
     },
     "plugins": [
       "expo-router"
-    ]
+    ],
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "ec924787-be91-4760-84a9-2f21247b7e45"
+      }
+    }
   }
 }
-
