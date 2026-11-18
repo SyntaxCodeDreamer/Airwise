@@ -1,5 +1,5 @@
 import os
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "AirWise AI Backend"
@@ -21,9 +21,13 @@ class Settings(BaseSettings):
     OPEN_METEO_AQI_URL: str = "https://air-quality-api.open-meteo.com/v1/air-quality"
     OPENAQ_BASE_URL: str = "https://api.openaq.org/v2"
 
-    class Config:
-        env_file = ".env"
-        extra = "ignore"
+    # In-memory TTL cache duration for external environmental requests (seconds)
+    AQI_CACHE_TTL_SECONDS: int = 300
+
+    # Pydantic v2 ConfigDict
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        extra="ignore"
+    )
 
 settings = Settings()
-

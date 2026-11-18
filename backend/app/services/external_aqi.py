@@ -3,11 +3,11 @@ import logging
 from typing import Dict, Any, List, Optional
 from datetime import datetime, timezone
 from app.core.config import settings
+from app.core.cache import aqi_cache
 from app.services.aqi_engine import calculate_naqi
 
 logger = logging.getLogger("airwise.external_aqi")
 
-# Prominent Indian Cities with default coordinates for instant station lookup
 INDIAN_CITIES = {
     "delhi": {"name": "New Delhi - Anand Vihar CPCB", "lat": 28.6508, "lon": 77.3152, "state": "Delhi"},
     "mumbai": {"name": "Mumbai - Bandra Kurla Complex", "lat": 19.0657, "lon": 72.8687, "state": "Maharashtra"},
@@ -24,8 +24,13 @@ class ExternalAQIService:
     async def fetch_open_meteo_aqi(lat: float, lon: float) -> Dict[str, Any]:
         """
         Fetches live pollutant levels and 48-hour forecasts from Open-Meteo Air Quality API.
-        Does not require an API key and operates with high reliability.
+        Uses in-memory TTL caching with coordinate quantization (~1.1km) for maximum efficiency.
         """
+        cache_key = f"aqi_{round(lat, 2)}_{round(lon, 2)}"
+        cached = aqi_cache.get(cache_key)
+        if cached:
+            return cached
+
         url = settings.OPEN_METEO_AQI_URL
         params = {
             "latitude": lat,
@@ -37,15 +42,13 @@ class ExternalAQIService:
         }
         
         try:
-            async with httpx.AsyncClient(timeout=10.0) as client:
+            async with httpx.AsyncClient(timeout=8.0) as client:
                 res = await client.get(url, params=params)
                 if res.status_code == 200:
                     data = res.json()
                     curr = data.get("current", {})
                     hourly = data.get("hourly", {})
                     
-                    # Convert to CPCB NAQI standard units
-                    # Open-Meteo returns CO in ug/m3, CPCB uses mg/m3 -> divide by 1000
                     co_mg = (curr.get("carbon_monoxide") or 0.0) / 1000.0 if curr.get("carbon_monoxide") is not None else None
                     
                     pollutants = {
@@ -59,8 +62,7 @@ class ExternalAQIService:
                     
                     naqi = calculate_naqi(pollutants)
                     
-                    # Parse hourly forecast
-                    times = hourly.get("time", [])[:24] # Next 24 hours
+                    times = hourly.get("time", [])[:24]
                     pm25_hourly = hourly.get("pm2_5", [])[:24]
                     pm10_hourly = hourly.get("pm10", [])[:24]
                     
@@ -75,7 +77,7 @@ class ExternalAQIService:
                             "pm10": p10
                         })
                     
-                    return {
+                    result = {
                         "source": "Open-Meteo Air Quality / CPCB NAQI Standard",
                         "freshness_status": "LIVE",
                         "observed_at": curr.get("time", datetime.now(timezone.utc).isoformat()),
@@ -84,15 +86,16 @@ class ExternalAQIService:
                         "aqi_data": naqi,
                         "hourly_forecast": hourly_trend
                     }
+                    aqi_cache.set(cache_key, result, ttl=settings.AQI_CACHE_TTL_SECONDS)
+                    return result
                 else:
                     logger.warning(f"Open-Meteo returned status {res.status_code}")
         except Exception as e:
             logger.error(f"Error fetching Open-Meteo data: {e}")
             
-        # Realistic winter smog fallback if network is unreachable
         fallback_pollutants = {"pm25": 178.0, "pm10": 284.0, "no2": 62.0, "so2": 18.0, "co": 1.9, "o3": 38.0}
         naqi = calculate_naqi(fallback_pollutants)
-        return {
+        fallback_result = {
             "source": "CPCB Indian Sensor Baseline (Fallback Model)",
             "freshness_status": "ESTIMATED",
             "observed_at": datetime.now(timezone.utc).isoformat(),
@@ -107,16 +110,23 @@ class ExternalAQIService:
                 {"time": "12:00", "aqi": 290, "category": "Poor", "pm25": 140.0, "pm10": 220.0}
             ]
         }
+        aqi_cache.set(cache_key, fallback_result, ttl=60)
+        return fallback_result
 
     @staticmethod
     async def geocode_address(query: str) -> List[Dict[str, Any]]:
         """
-        Geocodes location name / address using Open-Meteo Geocoding API with fallback.
+        Geocodes location name / address with caching.
         """
+        cache_key = f"geo_{query.strip().lower()}"
+        cached = aqi_cache.get(cache_key)
+        if cached:
+            return cached
+
         url = "https://geocoding-api.open-meteo.com/v1/search"
         params = {"name": query, "count": 5, "language": "en", "format": "json"}
         try:
-            async with httpx.AsyncClient(timeout=8.0) as client:
+            async with httpx.AsyncClient(timeout=6.0) as client:
                 res = await client.get(url, params=params)
                 if res.status_code == 200:
                     data = res.json()
@@ -133,11 +143,11 @@ class ExternalAQIService:
                             "country": country
                         })
                     if results:
+                        aqi_cache.set(cache_key, results, ttl=3600)
                         return results
         except Exception as e:
             logger.error(f"Geocoding error: {e}")
 
-        # Fallback local match against known cities
         q_lower = query.lower()
         matched = []
         for k, v in INDIAN_CITIES.items():
@@ -155,6 +165,7 @@ class ExternalAQIService:
                 "lon": 77.2090,
                 "country": "India"
             })
+        aqi_cache.set(cache_key, matched, ttl=1800)
         return matched
 
     @staticmethod

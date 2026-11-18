@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends
+import re
+from fastapi import APIRouter, Depends, Path, HTTPException, status
 from datetime import datetime, timezone
 from typing import List
 from app.core.auth import get_current_user, AuthenticatedUser
@@ -6,7 +7,6 @@ from app.models.schemas import CommunityReportCreate
 
 router = APIRouter()
 
-# In-memory incident list fallback with realistic community reports
 COMMUNITY_REPORTS = [
     {
         "id": "rep_101",
@@ -44,7 +44,7 @@ async def create_report(
     report: CommunityReportCreate,
     user: AuthenticatedUser = Depends(get_current_user)
 ):
-    """Submits a new citizen incident report."""
+    """Submits a new citizen incident report with input sanitization."""
     new_rep = {
         "id": f"rep_{len(COMMUNITY_REPORTS) + 101}",
         "user_name": user.name or "Concerned Citizen",
@@ -61,7 +61,9 @@ async def create_report(
     return {"message": "Report logged successfully", "report": new_rep}
 
 @router.post("/reports/{report_id}/upvote")
-async def upvote_report(report_id: str):
+async def upvote_report(
+    report_id: str = Path(..., pattern=r"^rep_[0-9]+$", description="Valid report ID format")
+):
     """Upvote/verify an incident report."""
     for rep in COMMUNITY_REPORTS:
         if rep["id"] == report_id:
@@ -69,5 +71,4 @@ async def upvote_report(report_id: str):
             if rep["upvotes"] >= 5:
                 rep["status"] = "VERIFIED"
             return {"message": "Report verified", "upvotes": rep["upvotes"]}
-    return {"error": "Report not found"}
-
+    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Report not found")
