@@ -28,7 +28,16 @@ export default function DashboardScreen() {
         const loc = await Location.getCurrentPositionAsync({});
         lat = loc.coords.latitude;
         lon = loc.coords.longitude;
-        setLocationName(`${lat.toFixed(2)}°N, ${lon.toFixed(2)}°E`);
+        try {
+          const rev = await mobileAqiApi.reverseGeocode(lat, lon);
+          if (rev && rev.name) {
+            setLocationName(rev.name);
+          } else {
+            setLocationName(`${lat.toFixed(2)}°N, ${lon.toFixed(2)}°E`);
+          }
+        } catch {
+          setLocationName(`${lat.toFixed(2)}°N, ${lon.toFixed(2)}°E`);
+        }
       }
       
       const data = await mobileAqiApi.getCurrentAQI(lat, lon);
@@ -98,6 +107,14 @@ export default function DashboardScreen() {
             </View>
           </View>
 
+          {/* Quick Actions / Tips */}
+          <View style={styles.tipsCard}>
+            <Text style={styles.tipsTitle}>💡 Smog Defense Quick Hacks</Text>
+            <Text style={styles.tipsItem}>• Seal exterior door gaps with draft stoppers to block PM2.5</Text>
+            <Text style={styles.tipsItem}>• Avoid running unvented gas heaters or incense indoors</Text>
+            <Text style={styles.tipsItem}>• Use wet mopping instead of dry broom sweeping to avoid dust resuspension</Text>
+          </View>
+
           <View style={styles.noticeCard}>
             <Text style={styles.noticeTitle}>⚠️ CPCB National Health Advisory</Text>
             <Text style={styles.noticeDesc}>{aqiInfo.health_impact || 'Prolonged exposure triggers respiratory illness.'}</Text>
@@ -116,6 +133,7 @@ const styles = StyleSheet.create({
   contentContainer: {
     padding: 20,
     paddingTop: 50,
+    paddingBottom: 40,
   },
   header: {
     marginBottom: 16,
@@ -166,13 +184,33 @@ const styles = StyleSheet.create({
     color: '#f8fafc',
     marginTop: 4,
   },
+  tipsCard: {
+    backgroundColor: '#1e293b',
+    borderRadius: 20,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#334155'
+  },
+  tipsTitle: {
+    fontSize: 13,
+    fontWeight: 'bold',
+    color: '#38bdf8',
+    marginBottom: 8
+  },
+  tipsItem: {
+    color: '#cbd5e1',
+    fontSize: 12,
+    lineHeight: 18,
+    marginVertical: 2
+  },
   noticeCard: {
     backgroundColor: 'rgba(239, 68, 68, 0.1)',
     borderColor: 'rgba(239, 68, 68, 0.3)',
     borderWidth: 1,
     borderRadius: 18,
     padding: 16,
-    marginTop: 10,
+    marginTop: 4,
   },
   noticeTitle: {
     color: '#f87171',
@@ -186,4 +224,3 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
 });
-

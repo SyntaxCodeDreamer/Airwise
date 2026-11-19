@@ -60,6 +60,14 @@ export default function AIAdvisorScreen() {
             ))}
           </View>
 
+          {/* Indoor Air Quality Hacks */}
+          <View style={[styles.protocolBox, { backgroundColor: '#062828', borderColor: '#10b98133', borderWidth: 1 }]}>
+            <Text style={[styles.protocolHeader, { color: '#34d399' }]}>🌿 Indoor Air Quality Hacks:</Text>
+            {advice?.indoor_tips?.map((tip: string, idx: number) => (
+              <Text key={idx} style={styles.actionItem}>• {tip}</Text>
+            ))}
+          </View>
+
           <View style={styles.familyNotice}>
             <Text style={styles.familyHeader}>👨‍👩‍👧 Family Alert:</Text>
             <Text style={styles.familyText}>{advice?.vulnerable_guidance}</Text>
@@ -72,7 +80,7 @@ export default function AIAdvisorScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0b1120' },
-  contentContainer: { padding: 20, paddingTop: 50 },
+  contentContainer: { padding: 20, paddingTop: 50, paddingBottom: 40 },
   header: { marginBottom: 16 },
   title: { fontSize: 26, fontWeight: '900', color: '#ffffff' },
   subtitle: { fontSize: 13, color: '#94a3b8', marginTop: 4 },
@@ -84,11 +92,10 @@ const styles = StyleSheet.create({
   card: { backgroundColor: '#1e293b', borderRadius: 20, padding: 20 },
   summaryTitle: { fontSize: 16, fontWeight: 'bold', color: '#f8fafc', marginBottom: 8 },
   summaryText: { fontSize: 13, color: '#cbd5e1', lineHeight: 20 },
-  protocolBox: { marginTop: 16, backgroundColor: '#0f172a', padding: 14, borderRadius: 14 },
+  protocolBox: { marginTop: 14, backgroundColor: '#0f172a', padding: 14, borderRadius: 14 },
   protocolHeader: { fontSize: 12, fontWeight: 'bold', color: '#10b981', marginBottom: 6 },
   actionItem: { fontSize: 12, color: '#e2e8f0', marginVertical: 3, lineHeight: 18 },
-  familyNotice: { marginTop: 16, backgroundColor: 'rgba(245, 158, 11, 0.1)', borderColor: 'rgba(245, 158, 11, 0.3)', borderWidth: 1, padding: 14, borderRadius: 14 },
+  familyNotice: { marginTop: 14, backgroundColor: 'rgba(245, 158, 11, 0.1)', borderColor: 'rgba(245, 158, 11, 0.3)', borderWidth: 1, padding: 14, borderRadius: 14 },
   familyHeader: { color: '#fbbf24', fontSize: 12, fontWeight: 'bold' },
   familyText: { color: '#fde68a', fontSize: 12, marginTop: 4, lineHeight: 18 }
 });
-
