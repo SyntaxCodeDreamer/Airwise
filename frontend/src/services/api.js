@@ -34,6 +34,10 @@ export const aiApi = {
     const res = await axios.post(`${API_BASE}/ai/routine`, payload);
     return res.data;
   },
+  get48hPlan: async (payload) => {
+    const res = await axios.post(`${API_BASE}/ai/48h-plan`, payload);
+    return res.data;
+  },
   compareTransport: async (distanceKm) => {
     const res = await axios.post(`${API_BASE}/ai/transport`, { distance_km: distanceKm });
     return res.data;
@@ -56,6 +60,14 @@ export const communityApi = {
 };
 
 export const authApi = {
+  signUp: async (data) => {
+    const res = await axios.post(`${API_BASE}/auth/signup`, data);
+    return res.data;
+  },
+  login: async (data) => {
+    const res = await axios.post(`${API_BASE}/auth/login`, data);
+    return res.data;
+  },
   getProfile: async () => {
     const res = await axios.get(`${API_BASE}/auth/profile`);
     return res.data;

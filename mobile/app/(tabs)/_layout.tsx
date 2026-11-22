@@ -32,6 +32,24 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="planner"
+        options={{
+          title: 'Daily Plan',
+          tabBarIcon: ({ color }) => (
+            <Text style={{ fontSize: 18 }}>📅</Text>
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="map"
+        options={{
+          title: 'Smog Map',
+          tabBarIcon: ({ color }) => (
+            <Text style={{ fontSize: 18 }}>🗺️</Text>
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="advisor"
         options={{
           title: 'AI Advisor',
@@ -41,30 +59,34 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="more"
+        options={{
+          title: 'More Modules',
+          tabBarIcon: ({ color }) => (
+            <Text style={{ fontSize: 18 }}>⚡</Text>
+          ),
+        }}
+      />
+      {/* Hidden sub-tabs accessible via direct navigation */}
+      <Tabs.Screen
         name="commute"
         options={{
-          title: 'Transport',
-          tabBarIcon: ({ color }) => (
-            <Text style={{ fontSize: 18 }}>🚇</Text>
-          ),
+          href: null,
+          title: 'Transport'
         }}
       />
       <Tabs.Screen
         name="community"
         options={{
-          title: 'Community',
-          tabBarIcon: ({ color }) => (
-            <Text style={{ fontSize: 18 }}>🚨</Text>
-          ),
+          href: null,
+          title: 'Community'
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'Profile',
-          tabBarIcon: ({ color }) => (
-            <Text style={{ fontSize: 18 }}>👤</Text>
-          ),
+          href: null,
+          title: 'Profile'
         }}
       />
     </Tabs>

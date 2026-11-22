@@ -190,5 +190,24 @@ export const mobileAqiApi = {
     } catch (e) {
       return { success: true, message: "Report logged locally in citizen alert system." };
     }
+  },
+
+  signUp: async (email: string, full_name: string, password: string, city: string = "New Delhi") => {
+    const res = await axios.post(`${API_BASE_URL}/auth/signup`, {
+      email,
+      full_name,
+      password,
+      city,
+      preferred_language: "en"
+    }, { timeout: 5000 });
+    return res.data;
+  },
+
+  login: async (email: string, password: string) => {
+    const res = await axios.post(`${API_BASE_URL}/auth/login`, {
+      email,
+      password
+    }, { timeout: 5000 });
+    return res.data;
   }
 };

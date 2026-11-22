@@ -53,6 +53,18 @@ const Navbar = () => {
             </NavLink>
 
             <NavLink
+              to="/suite"
+              className={({ isActive }) =>
+                `flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  isActive ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30' : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/60'
+                }`
+              }
+            >
+              <Activity className="w-4 h-4 text-emerald-400" />
+              <span className="hidden md:inline">AirWise Suite</span>
+            </NavLink>
+
+            <NavLink
               to="/commute"
               className={({ isActive }) =>
                 `flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium transition-colors ${

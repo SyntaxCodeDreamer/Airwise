@@ -15,8 +15,12 @@ def sanitize_text(text: Optional[str]) -> Optional[str]:
 class FamilyHealthProfile(BaseModel):
     has_elderly: bool = False
     has_infants: bool = False
+    has_pregnant_member: bool = False
     has_asthma_respiratory: bool = False
     has_indoor_air_purifier: bool = False
+    family_members_count: int = Field(3, ge=1, le=20)
+    commute_mode: str = Field("Metro / Public Transit", max_length=50) # Metro, Car, Two-Wheeler, Bus, Walking
+    indoor_pollution_sources: List[str] = Field(default_factory=list) # Incense, Mosquito Coils, Unvented Gas, Scented Candles
 
 class UserProfileUpdate(BaseModel):
     full_name: Optional[str] = Field(None, max_length=100)

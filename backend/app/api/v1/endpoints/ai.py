@@ -26,6 +26,13 @@ async def get_daily_routine(req: RoutineRequest):
     """
     return await GeminiAIService.plan_daily_routine(req.aqi, req.city, req.language)
 
+@router.post("/48h-plan")
+async def get_48h_plan(req: RoutineRequest):
+    """
+    Generates 48-hour plan with cleanest/dirtiest windows, personalized impact, and WhatsApp text.
+    """
+    return await GeminiAIService.generate_48h_plan(req.aqi, req.city)
+
 @router.post("/transport")
 async def compare_transport(req: TransportRequest):
     """

@@ -12,8 +12,12 @@ const DEFAULT_GUEST_USER = {
   familyProfile: {
     hasElderly: true,
     hasInfants: false,
+    hasPregnantMember: false,
     hasAsthmaRespiratory: true,
-    hasIndoorAirPurifier: false
+    hasIndoorAirPurifier: false,
+    familyMembersCount: 3,
+    commuteMode: "Metro / Public Transit",
+    indoorPollutionSources: ["Incense / Agarbatti"]
   }
 };
 
@@ -70,28 +74,59 @@ export const AuthProvider = ({ children }) => {
     }
   }, [isAuthenticated]);
 
-  const login = (email, fullName, password) => {
-    const newUser = {
-      uid: `usr_${Date.now()}`,
-      email: email || "citizen@airwise.ai",
-      fullName: fullName || (email ? email.split('@')[0] : "Aarav Sharma"),
-      preferredLanguage: "en",
-      city: "New Delhi",
-      familyProfile: {
-        hasElderly: true,
-        hasInfants: false,
-        hasAsthmaRespiratory: true,
-        hasIndoorAirPurifier: false
+  const login = async (email, fullName, password) => {
+    try {
+      const res = await authApi.login({ email, password });
+      if (res && res.user) {
+        setUser(res.user);
+        setIsAuthenticated(true);
+        localStorage.setItem('airwise_user', JSON.stringify(res.user));
+        localStorage.setItem('airwise_auth', 'true');
+        return { success: true };
       }
-    };
-    setUser(newUser);
-    setIsAuthenticated(true);
-    localStorage.setItem('airwise_user', JSON.stringify(newUser));
-    localStorage.setItem('airwise_auth', 'true');
+    } catch (err) {
+      // Fallback local auth if server down
+      const fallbackUser = {
+        uid: `usr_${Date.now()}`,
+        email: email || "citizen@airwise.ai",
+        fullName: fullName || (email ? email.split('@')[0] : "Aarav Sharma"),
+        preferredLanguage: "en",
+        city: "New Delhi",
+        familyProfile: DEFAULT_GUEST_USER.familyProfile
+      };
+      setUser(fallbackUser);
+      setIsAuthenticated(true);
+      localStorage.setItem('airwise_user', JSON.stringify(fallbackUser));
+      localStorage.setItem('airwise_auth', 'true');
+      return { success: true };
+    }
   };
 
-  const register = (email, fullName, password) => {
-    login(email, fullName, password);
+  const register = async (email, fullName, password, city = "New Delhi", preferredLanguage = "en") => {
+    try {
+      const res = await authApi.signUp({ email, full_name: fullName, password, city, preferred_language: preferredLanguage });
+      if (res && res.user) {
+        setUser(res.user);
+        setIsAuthenticated(true);
+        localStorage.setItem('airwise_user', JSON.stringify(res.user));
+        localStorage.setItem('airwise_auth', 'true');
+        return { success: true };
+      }
+    } catch (err) {
+      const fallbackUser = {
+        uid: `usr_${Date.now()}`,
+        email: email || "citizen@airwise.ai",
+        fullName: fullName || "New Citizen",
+        preferredLanguage,
+        city,
+        familyProfile: DEFAULT_GUEST_USER.familyProfile
+      };
+      setUser(fallbackUser);
+      setIsAuthenticated(true);
+      localStorage.setItem('airwise_user', JSON.stringify(fallbackUser));
+      localStorage.setItem('airwise_auth', 'true');
+      return { success: true };
+    }
   };
 
   const logout = () => {

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Wind, Shield, Lock, Mail, User, Sparkles, CheckCircle2, ArrowRight } from 'lucide-react';
 
-const LoginModal = ({ isOpen, onClose }) => {
+const LoginModal = ({ isOpen, onClose, mandatory = false }) => {
   const { login, register } = useAuth();
   const [isRegister, setIsRegister] = useState(false);
   const [email, setEmail] = useState('');
@@ -51,8 +51,18 @@ const LoginModal = ({ isOpen, onClose }) => {
             <h2 className="text-xl font-extrabold text-white">
               {isRegister ? 'Join AirWise AI' : 'Sign in to AirWise AI'}
             </h2>
-            <p className="text-xs text-slate-400">Personalized clean air & family health guidance</p>
+            <p className="text-xs text-slate-400">
+              {mandatory ? 'Authentication mandatory to access family clean air services' : 'Personalized clean air & family health guidance'}
+            </p>
           </div>
+          {!mandatory && onClose && (
+            <button
+              onClick={onClose}
+              className="ml-auto text-slate-400 hover:text-white p-2 text-sm rounded-lg"
+            >
+              ✕
+            </button>
+          )}
         </div>
 
         {error && (

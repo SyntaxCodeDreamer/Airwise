@@ -8,9 +8,21 @@ const Profile = () => {
   const [city, setCity] = useState(user?.city || "New Delhi");
   const [elderly, setElderly] = useState(user?.familyProfile?.hasElderly ?? true);
   const [infants, setInfants] = useState(user?.familyProfile?.hasInfants ?? false);
+  const [pregnant, setPregnant] = useState(user?.familyProfile?.hasPregnantMember ?? false);
   const [asthma, setAsthma] = useState(user?.familyProfile?.hasAsthmaRespiratory ?? true);
   const [purifier, setPurifier] = useState(user?.familyProfile?.hasIndoorAirPurifier ?? false);
+  const [membersCount, setMembersCount] = useState(user?.familyProfile?.familyMembersCount ?? 3);
+  const [commute, setCommute] = useState(user?.familyProfile?.commuteMode || "Metro / Public Transit");
+  const [indoorSources, setIndoorSources] = useState(user?.familyProfile?.indoorPollutionSources || ["Incense / Agarbatti"]);
   const [saved, setSaved] = useState(false);
+
+  const toggleSource = (src) => {
+    if (indoorSources.includes(src)) {
+      setIndoorSources(indoorSources.filter(s => s !== src));
+    } else {
+      setIndoorSources([...indoorSources, src]);
+    }
+  };
 
   const handleSave = async (e) => {
     e.preventDefault();
@@ -20,8 +32,12 @@ const Profile = () => {
       familyProfile: {
         hasElderly: elderly,
         hasInfants: infants,
+        hasPregnantMember: pregnant,
         hasAsthmaRespiratory: asthma,
-        hasIndoorAirPurifier: purifier
+        hasIndoorAirPurifier: purifier,
+        familyMembersCount: Number(membersCount),
+        commuteMode: commute,
+        indoorPollutionSources: indoorSources
       }
     });
     setSaved(true);
@@ -107,6 +123,12 @@ const Profile = () => {
                 setter: setInfants
               },
               {
+                title: "Expectant / Pregnant Family Member",
+                desc: "Protects systemic maternal health, placenta barrier, and fetal oxygenation.",
+                checked: pregnant,
+                setter: setPregnant
+              },
+              {
                 title: "Pre-existing Respiratory Conditions (Asthma / COPD / Bronchitis)",
                 desc: "Requires proactive notification to keep rescue inhalers accessible.",
                 checked: asthma,
@@ -135,6 +157,76 @@ const Profile = () => {
                 </div>
               </label>
             ))}
+          </div>
+        </div>
+
+        {/* Commuting & Indoor Sources */}
+        <div className="bg-slate-800/60 border border-slate-700/60 rounded-3xl p-6 md:p-8 shadow-xl space-y-4">
+          <h2 className="text-lg font-bold text-white flex items-center gap-2">
+            <Shield className="w-5 h-5 text-emerald-400" />
+            Commuting Habits & Indoor Pollution Sources
+          </h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                Primary Commute Habit
+              </label>
+              <select
+                value={commute}
+                onChange={(e) => setCommute(e.target.value)}
+                className="w-full bg-slate-900 border border-slate-700 text-white text-sm rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-emerald-500"
+              >
+                <option value="Metro / Public Transit">Delhi Metro / Rapid Rail (Sealed Air)</option>
+                <option value="Electric / CNG Bus">Electric / CNG City Bus</option>
+                <option value="Personal Petrol / Diesel Car">Personal Petrol/Diesel Car</option>
+                <option value="Two-Wheeler (Motorbike/Scooter)">Two-Wheeler (High Ambient Inhalation)</option>
+                <option value="Bicycle / Walking">Bicycle / Walking</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                Household Members Count
+              </label>
+              <input
+                type="number"
+                min="1"
+                max="20"
+                value={membersCount}
+                onChange={(e) => setMembersCount(e.target.value)}
+                className="w-full bg-slate-900 border border-slate-700 text-white text-sm rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-emerald-500"
+              />
+            </div>
+          </div>
+
+          <div className="pt-2">
+            <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-2">
+              Common Indoor Smoke / Pollution Triggers
+            </label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              {[
+                "Incense / Agarbatti",
+                "Mosquito Coils / Liquidators",
+                "Unvented Gas Stove Cooking",
+                "Scented Candles / Dhoop"
+              ].map((src, i) => {
+                const active = indoorSources.includes(src);
+                return (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => toggleSource(src)}
+                    className={`p-3 rounded-xl border text-left text-xs font-medium transition-all flex items-center justify-between ${
+                      active ? 'bg-amber-500/10 border-amber-500/40 text-amber-300' : 'bg-slate-900/60 border-slate-800 text-slate-400'
+                    }`}
+                  >
+                    <span>{src}</span>
+                    <span>{active ? '⚠️ Present' : '+ None'}</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
 
